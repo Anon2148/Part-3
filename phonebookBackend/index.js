@@ -26,6 +26,40 @@ let notes = [
   },
 ];
 
+const generateId = () => {
+  const maxId =
+    notes.length > 0 ? Math.max(...notes.map((n) => Number(n.id))) : 0;
+  return String(maxId + 1);
+};
+
+app.post("/api/persons", (request, response) => {
+  const body = request.body;
+
+  if (!body.name) {
+    return response.status(400).json({
+      error: "name is missing",
+    });
+  } else if (!body.number) {
+    return response.status(400).json({
+      error: "number is missing",
+    });
+  } else if (notes.filter((p) => p.name === body.name).length > 0) {
+    return response.status(400).json({
+      error: "name must be unique",
+    });
+  }
+
+  const person = {
+    name: body.name,
+    number: body.number,
+    id: generateId(),
+  };
+
+  notes = notes.concat(person);
+
+  response.json(person);
+});
+
 app.get("/api/persons", (request, response) => {
   response.json(notes);
 });
