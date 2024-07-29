@@ -1,7 +1,8 @@
 const express = require("express");
 const app = express();
 const morgan = require("morgan");
-
+require("dotenv").config();
+const Person = require("./models/person");
 app.use(express.json());
 
 app.use(express.static("dist"));
@@ -36,35 +37,6 @@ app.use(
   )
 );
 
-let notes = [
-  {
-    id: "1",
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: "2",
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: "3",
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: "4",
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
-
-const generateId = () => {
-  const maxId =
-    notes.length > 0 ? Math.max(...notes.map((n) => Number(n.id))) : 0;
-  return String(maxId + 1);
-};
-
 app.post("/api/persons", (request, response) => {
   const body = request.body;
 
@@ -76,51 +48,45 @@ app.post("/api/persons", (request, response) => {
     return response.status(400).json({
       error: "number is missing",
     });
-  } else if (notes.filter((p) => p.name === body.name).length > 0) {
-    return response.status(400).json({
-      error: "name must be unique",
-    });
   }
 
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
-    id: generateId(),
-  };
+  });
 
-  notes = notes.concat(person);
-
-  response.json(person);
+  person.save().then((savedPerson) => {
+    response.json(savedPerson);
+  });
 });
 
 app.get("/api/persons", (request, response) => {
-  response.json(notes);
-});
-
-app.get("/info", (request, response) => {
-  response.send(
-    `<p>Phonebook has info for ${notes.length} people</p><p>${new Date()}</p>`
-  );
+  Person.find({}).then((persons) => {
+    response.json(persons);
+  });
 });
 
 app.get("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  const person = notes.find((note) => note.id === id);
-  if (person) {
-    response.json(person);
-  } else {
-    response.status(404).end();
-  }
+  Person.findById(request.params.id)
+    .then((person) => {
+      response.json(person);
+    })
+    .catch((error) => {
+      response.status(404).json({
+        error: "person not found",
+      });
+    });
 });
 
 app.delete("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  notes = notes.filter((note) => note.id !== id);
-
-  response.status(204).end();
+  Person.findByIdAndDelete(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
