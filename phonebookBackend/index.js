@@ -97,6 +97,15 @@ app.get("/api/info", (request, response) => {
 
 app.put("/api/persons/:id", (request, response, next) => {
   const { name, number } = request.body;
+  if (!name) {
+    return response.status(400).json({
+      error: "name is missing",
+    });
+  } else if (!number) {
+    return response.status(400).json({
+      error: "number is missing",
+    });
+  }
   Person.findByIdAndUpdate(
     request.params.id,
     { name, number },
