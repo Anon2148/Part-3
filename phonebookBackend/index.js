@@ -80,6 +80,16 @@ app.get("/api/persons/:id", (request, response, next) => {
     });
 });
 
+app.get("/api/info", (request, response) => {
+  Person.find({}).then((persons) => {
+    response.send(
+      `<p>Phonebook has info for ${
+        persons.length
+      } people</p><p>${new Date()}</p>`
+    );
+  });
+});
+
 app.put("/api/persons/:id", (request, response, next) => {
   const body = request.body;
   const person = {
